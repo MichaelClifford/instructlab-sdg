@@ -603,6 +603,7 @@ class DataMixer:
         date_suffix,
         sys_prompt,
         num_procs,
+        skills_recipe_path,
         auxiliary_inst=None,
     ):
         # HACK(osilkin): This is used to upsample the knowledge dataset when the **pre-computed** skills dataset
@@ -616,24 +617,26 @@ class DataMixer:
         self.num_procs = num_procs
         self.auxiliary_inst = auxiliary_inst
 
-        self.knowledge_recipe = self._load_default_recipe("knowledge.yaml")
-        self.skills_recipe = self._load_default_recipe("skills.yaml")
+        self.knowledge_recipe = self._load_recipe("knowledge.yaml")
+        self.skills_recipe = self._load_recipe("skills.yaml",skills_recipe_path)
 
         self.output_file_knowledge_recipe = f"knowledge_recipe_{date_suffix}.yaml"
         self.output_file_skills_recipe = f"skills_recipe_{date_suffix}.yaml"
         self.output_file_mixed_knowledge = f"knowledge_train_msgs_{date_suffix}.jsonl"
         self.output_file_mixed_skills = f"skills_train_msgs_{date_suffix}.jsonl"
-
-    def _load_default_recipe(self, yaml_basename):
+            
+    
+    def _load_recipe(self, yaml_basename, recipe_path = None):
         """
         Load a default system recipe from e.g. /usr/share/instructlab/sdg/default_data_recipes
         if it exists, otherwise return an empty recipe.
-        """
+        """ 
         for d in self.data_dirs:
-            default_recipe_path = os.path.join(d, "default_data_recipes", yaml_basename)
-            if os.path.exists(default_recipe_path):
+            if not recipe_path:
+                recipe_path = os.path.join(d, "default_data_recipes", yaml_basename)
+            if os.path.exists(recipe_path):
                 recipe = Recipe(
-                    recipe_path=default_recipe_path, sys_prompt=self.sys_prompt
+                    recipe_path=recipe_path, sys_prompt=self.sys_prompt
                 )
                 if "skills" in yaml_basename and recipe.datasets:
                     # HACK(osilkin): we need to balance out the knowledge such that it doesn't
@@ -642,8 +645,30 @@ class DataMixer:
                     self._precomputed_skills_length = _total_length_of_datasets(
                         recipe.datasets
                     )
-                return recipe
+                    return recipe
         return Recipe(sys_prompt=self.sys_prompt)
+
+    
+    # def _load_default_recipe(self, yaml_basename):
+    #     """
+    #     Load a default system recipe from e.g. /usr/share/instructlab/sdg/default_data_recipes
+    #     if it exists, otherwise return an empty recipe.
+    #     """
+    #     for d in self.data_dirs:
+    #         default_recipe_path = os.path.join(d, "default_data_recipes", yaml_basename)
+    #         if os.path.exists(default_recipe_path):
+    #             recipe = Recipe(
+    #                 recipe_path=default_recipe_path, sys_prompt=self.sys_prompt
+    #             )
+    #             if "skills" in yaml_basename and recipe.datasets:
+    #                 # HACK(osilkin): we need to balance out the knowledge such that it doesn't
+    #                 #                get drowned out in the skills dataset. This workaround allows us
+    #                 #                to re-balance such that skills consists of at least 3% skills
+    #                 self._precomputed_skills_length = _total_length_of_datasets(
+    #                     recipe.datasets
+    #                 )
+    #             return recipe
+    #     return Recipe(sys_prompt=self.sys_prompt)
 
     def _gen_leaf_node_data(
         self, leaf_node_data, recipe, output_file_leaf_node, sampling_size=1.0

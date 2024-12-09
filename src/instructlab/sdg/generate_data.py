@@ -271,6 +271,7 @@ def _mixer_init(
     date_suffix,
     knowledge_auxiliary_inst,
     system_prompt,
+    skills_recipe,
 ):
     data_dirs = [os.path.join(xdg_data_home(), "instructlab", "sdg")]
     data_dirs.extend(os.path.join(dir, "instructlab", "sdg") for dir in xdg_data_dirs())
@@ -282,6 +283,7 @@ def _mixer_init(
         system_prompt,
         ctx.dataset_num_procs,
         knowledge_auxiliary_inst,
+        skills_recipe,
     )
 
 
@@ -308,6 +310,7 @@ def generate_data(
     batch_size: Optional[int] = None,
     checkpoint_dir: Optional[str] = None,
     max_num_tokens: Optional[int] = DEFAULT_MAX_NUM_TOKENS,
+    skills_recipe: Optional[str] = None,
 ) -> None:
     """Generate data for training and testing a model.
 
@@ -390,6 +393,7 @@ def generate_data(
         date_suffix,
         knowledge_pipe.auxiliary_inst,
         system_prompt,
+        skills_recipe,
     )
 
     if console_output:
